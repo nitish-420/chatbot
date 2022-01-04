@@ -1,8 +1,26 @@
 from chatterbot import ChatBot
 from chatterbot.trainers import ListTrainer
 from tkinter import * 
+import speech_recognition as S
+import pyttsx3 as pp
+import threading
+
+engine=pp.init()
+
+voices=engine.getProperty('voices')
+
+engine.setProperty('voice',voices[0].id)
+
+rate = engine.getProperty('rate')   # getting details of current speaking rate
+engine.setProperty('rate', 125)
+
+volume = engine.getProperty('volume')   #getting to know current volume level (min=0 and max=1)
+engine.setProperty('volume',0.5)    # setting up volume level  between 0 and 1
 
 
+def speak(word):
+    engine.say(word)
+    engine.runAndWait()
 
 bot = ChatBot('My Bot')
 
@@ -44,10 +62,28 @@ trainer = ListTrainer(bot)
 trainer.train(convo)
 
 
-def askFromBot():
-    query=textF.get()
+def takeQuery():
+    sr=S.Recognizer()
+    sr.pause_threshold=1
+    print("your bot is listening ....")
+    with S.Microphone() as m:
+        try:
+            audio=sr.listen(m)
+            query=sr.recognize_google(audio,language='eng-in')
+            textF.delete(0,END)
+            textF.insert(0,query)
+
+            askFromBot(query)
+        except Exception as e:
+            print(e)
+
+
+
+def askFromBot(q=''):
+    query=q if len(q) else textF.get()
     answer=bot.get_response(query)
     messages.insert(END,"You : "+query)
+    speak(answer)
     messages.insert(END,"Bot : "+str(answer))
     messages.see(END)
     textF.delete(0,END)
@@ -69,7 +105,7 @@ frame=Frame(main)
 
 sc=Scrollbar(frame)
 
-messages=Listbox(frame,width=80,height=13)
+messages=Listbox(frame,width=80,height=13,yscrollcommand=sc.set)
 
 sc.pack(side=RIGHT,fill=Y)
 
@@ -80,8 +116,23 @@ frame.pack()
 textF=Entry(main,font=("Verdana",20))
 textF.pack(fill=X,pady=10)
 
+
 btn=Button(main,text="Ask from bot",font=("Verdana",20),command=askFromBot)
 btn.pack(pady=5)
+
+
+def enterFunction(event):
+    btn.invoke()
+
+# going to bind main window with enter key
+main.bind('<Return>',enterFunction)
+
+def repeatListen():
+    while True:
+        takeQuery()
+
+t=threading.Thread(target=repeatListen)
+t.start()
 
 main.mainloop()
 
