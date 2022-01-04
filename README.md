@@ -1,3 +1,3 @@
 # chatbot
 
-##A normal chatbot made using chatterbot and tKinter.
+#A normal chatbot made using chatterbot and tKinter.
